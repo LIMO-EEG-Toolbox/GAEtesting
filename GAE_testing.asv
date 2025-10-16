@@ -1,0 +1,570 @@
+% ERP Core - Whole Brain analysis
+% ----------------------------------------
+% The workflow below uses EEGLAB and LIMO MEEG to process
+% the data, and performs the 1st level analysis twice,
+% with and without trial weighting (see
+% https://doi.org/10.52294/ApertureNeuro.2022.2.SEOO9435)
+% and the group level analysis twice, with and without
+% subject weighting. Subject weighting is done using
+% the Graph Based Auto Encoder. Results are all saved
+% and reused in other script for analyses. One for
+% statistical analysis and the other for xAI.
+
+clear variables
+InputDataset   = '/indirect/staff/cyrilpernet/multiverse_analyses/ERP_CORE_BIDS_Raw_Files';
+OutputLocation = '/indirect/staff/cyrilpernet/multiverse_analyses/GAEtesting';
+
+% task we process
+% Note ERN was removed as there is unequal design matrix depending on error
+% responses - while this can be solved merging all conditions, for testing
+% purposes here, we simply did not process that task
+% N2Pc could be analyzed but since the interpretation relies on
+% hemispheric differences, it does not reflect dirreclty what the GAE could
+% be representing (given we that we use here channel neighbouring for the
+% graph - adding hemispheric connection can/could change results, TBC).
+TaskLabel       = {'MMN','N170','N400','P3'};
+
+% task parameters
+epoch_window    = repmat([-0.2 0.8],length(TaskLabel),1);
+baseline_window = repmat([-200 0],length(TaskLabel),1);
+analysis_window = repmat([-200 600],length(TaskLabel),1);
+
+% subject list
+all_sub = dir(fullfile(InputDataset,'sub-*'));
+SubjectLabel = arrayfun(@(x) x.name, all_sub, 'UniformOutput', false)';
+sublist = find(ismember({all_sub.name}', SubjectLabel))'; % labels to num
+
+% start eeglab and check plug-ins
+rng('default');
+current_folder = pwd;
+if ~exist('OutputLocation','dir')
+    mkdir(OutputLocation)
+end
+
+% analysis parameters
+high_pass    = 0.5;
+tmpfilter    = 'off';
+ICAname      = 'picard';
+estimation   = {'OLS','WLS'};
+nboot        = 1000;
+tfce         = 0;
+
+% -----------------------------------------------------------------
+%% Compute 1st level analyses
+% -----------------------------------------------------------------
+
+% edit participants.tsv checking the same subjects are present
+participants = readtable(fullfile(InputDataset,'participants.tsv'), 'FileType', 'text', ...
+    'Delimiter', '\t', 'TreatAsEmpty', {'N/A','n/a'}); N = size(participants,1);
+for p=length(participants.participant_id):-1:1
+    name_match(:,p) = arrayfun(@(x) strcmpi(x.name,participants.participant_id{p}),all_sub);
+end
+
+if ~isempty(find(sum(name_match,1)==0)) %#ok<EFIND>
+    participants(find(sum(name_match,1)==0),:) = []; %#ok<FNDSB>
+    warning('mismatch between files and participants.tsv -%g subject(s)',N-size(participants,1))
+    writetable(participants, fullfile(InputDataset,'participants.tsv'), 'FileType', 'text', 'Delimiter', '\t');
+end
+
+% edit events.tsv files
+% should we correct epoching +26ms for stimuli from events.tsv files? as opposed to eeg channels
+
+% edit events.tsv files for meaningful epoching for N170
+if any(contains(TaskLabel,'N170'))
+    for sub = 1:size(all_sub,1)
+        root   = fullfile(all_sub(sub).folder,[all_sub(sub).name filesep 'ses-N170' filesep 'eeg']);
+        file   = [all_sub(sub).name,'_ses-N170_task-N170_events.tsv'];
+        if exist(fullfile(root,file),'file')
+            events = readtable(fullfile(root,file), 'FileType', 'text', ...
+                'Delimiter', '\t', 'TreatAsEmpty', {'N/A','n/a'});
+            for s = size(events,1):-1:1
+                if events.value(s) <= 40
+                    event{s} = 'faces';
+                elseif (events.value(s) >= 41) && (events.value(s) < 101)
+                    event{s} = 'cars';
+                elseif (events.value(s) >= 101) && (events.value(s) < 141)
+                    event{s} = 'scrambled_faces';
+                else
+                    event{s} = 'scrambled_cars';
+                end
+            end
+            t = table(events.onset,events.duration,events.sample,events.trial_type,event',events.value,...
+                'VariableNames',{'onset', 'duration', 'sample', 'trial_type', 'event', 'value'});
+            writetable(t, fullfile(root,file), 'FileType', 'text', 'Delimiter', '\t');
+            clear event events t
+        end
+    end
+end
+
+% loop by TaskLabel
+for t = 1:length(TaskLabel)
+
+    %% IMPORT
+    outdir = fullfile(OutputLocation);
+    if ~exist(outdir,'dir')
+        mkdir(outdir)
+    end
+
+    if strcmpi(TaskLabel{t},'N170')
+        [STUDY, ALLEEG] = pop_importbids(InputDataset, 'bidsevent','on','bidschanloc','on', ...
+            'bidstask',TaskLabel{t},'eventtype', 'event', 'outputdir' ,outdir, 'studyName',TaskLabel{t}, 'subjects', sublist);
+    else
+        [STUDY, ALLEEG] = pop_importbids(InputDataset, 'bidsevent','on','bidschanloc','on', ...
+            'bidstask',TaskLabel{t},'eventtype', 'value', 'outputdir' ,outdir, 'studyName',TaskLabel{t}, 'subjects', sublist);
+    end
+
+    if t == 1 % also export metadata
+        addpath([fileparts(which('pop_importbids.m')) filesep 'JSONio']);
+        json = jsonread([InputDataset filesep 'dataset_description.json']);
+        json.DatasetType = 'Derivative';
+        json.Authors = 'Cyril Pernet';
+        json.SourceDatasets = "https://osf.io/9f5w7/files/osfstorage";
+        jsonwrite(fullfile(outdir,'dataset_description.json'),json,'prettyprint','on');
+        % ignore extra files
+        lines = {'*.study', '*.mat'};
+        fid = fopen([outdir filesep '.bidsignore'], 'w');
+        if fid == -1
+            error('Cannot open .bidsignore for writing.');
+        else
+            for i = 1:length(lines)
+                fprintf(fid, '%s\n', lines{i});
+            end
+            fclose(fid);
+        end
+    end
+
+    if length(ALLEEG) == 1 %#ok<ISCL>
+        ALLEEG = eeg_checkset(ALLEEG, 'loaddata');
+    end
+    ALLEEG = pop_select( ALLEEG, 'nochannel',{'HEOG_left','HEOG_right','VEOG_lower'});
+    STUDY = pop_statparams(STUDY, 'default');
+
+    [STUDY,~,AvgChanlocs] = std_prepare_neighbors(STUDY, ALLEEG, 'force', 'on');
+    % remove connections 8-9/3 ie P7-P9/F7, 26-27/19 ie P8-P10/F8 and 7-25/22 ie P3-P4/Cz
+    pairs(1,:) = [3 8];   pairs(2,:) = [3 9];
+    pairs(3,:) = [19 26]; pairs(4,:) = [19 27];
+    pairs(5,:) = [7 22];  pairs(6,:) = [25 22];
+    for p=1:6
+        AvgChanlocs.channeighbstructmat(pairs(p,1),pairs(p,2)) = 0;
+        AvgChanlocs.channeighbstructmat(pairs(p,2),pairs(p,1)) = 0;
+    end
+    save(fullfile(outdir, [TaskLabel{t} '-AvgChanlocs.mat']),'AvgChanlocs')
+
+    %% Pre-processing
+    % for each subject, downsample, clean 50Hz, remove bad channels,
+    % interpolate, re-reference to the average, run ICA to remove
+    % eye and muscle artefacts, delete bad segments
+
+    EEG = ALLEEG;
+    for s=1:size(ALLEEG,2)
+        try
+            % downsample
+            EEGTMP = eeg_checkset(EEG(s), 'loaddata');
+            if EEGTMP.srate ~= 250
+                EEGTMP = pop_resample(EEGTMP, 250);
+            end
+            % line freq removal
+            EEGTMP = pop_zapline_plus(EEGTMP,'noisefreqs','line',...
+                'coarseFreqDetectPowerDiff',4,'chunkLength',30,...
+                'adaptiveNremove',1,'fixedNremove',1,'plotResults',0);
+            % remove bad channels
+            EEGTMP = pop_clean_rawdata(EEGTMP,'FlatlineCriterion',5,'ChannelCriterion',0.8,...
+                'LineNoiseCriterion',4,'Highpass',[high_pass-0.25 high_pass+0.25] ,...
+                'BurstCriterion','off','WindowCriterion','off','BurstRejection','off',...
+                'Distance','Euclidian','WindowCriterionTolerances','off' );
+            % interpolate missing channels and reference
+            [~,idx] = setdiff({AvgChanlocs.expected_chanlocs.labels},{EEGTMP.chanlocs.labels});
+            stats.interpolated_channels= idx;
+            if ~isempty(idx)
+                EEGTMP = pop_interp(EEGTMP, AvgChanlocs.expected_chanlocs(idx), 'sphericalKang');
+            end
+
+            % ICA cleaning
+            if ~strcmpi(tmpfilter,'off')
+                tmpeeg = pop_eegfiltnew(EEGTMP,tmpfilter,0); %#ok<UNRCH>
+                if strcmpi(ICAname,'picard')
+                    tmpeeg = pop_runica(tmpeeg, 'icatype',ICAname,'maxiter',500,'mode','standard','concatcond','on', 'options',{'pca',EEGTMP.nbchan-1});
+                else
+                    tmpeeg = pop_runica(tmpeeg, 'icatype',ICAname,'concatcond','on', 'options',{'pca',tmpeeg.nbchan-1});
+                end
+                % project solution to the 0.5Hz filtered data
+                EEGTMP.icasphere   = [];
+                EEGTMP.icasphere   = tmpeeg.icasphere;
+                EEGTMP.icaweights  = [];
+                EEGTMP.icaweights  = tmpeeg.icaweights;
+                EEGTMP.icachansind = [];
+                EEGTMP.icachansind = tmpeeg.icachansind;
+                EEGTMP.icaact      = [];
+                EEGTMP.icawinv     = [];
+                EEGTMP             = eeg_checkset(EEGTMP); % re-compute EEG.icawinv
+                clear tmpeeg
+            else
+                if strcmpi(ICAname,'picard')
+                    EEGTMP = pop_runica(EEGTMP, 'icatype',ICAname,'maxiter',500,'mode','standard','concatcond','on', 'options',{'pca',EEGTMP.nbchan-1});
+                else
+                    EEGTMP = pop_runica(EEGTMP, 'icatype',ICAname,'concatcond','on', 'options',{'pca',EEGTMP.nbchan-1}); %#ok<UNRCH>
+                end
+            end
+            % clean data with ICs using IClabels
+            EEGTMP = pop_iclabel(EEGTMP, 'default');
+            EEGTMP = pop_icflag(EEGTMP,[NaN NaN;0.8 1;0.8 1;NaN NaN;NaN NaN;NaN NaN;NaN NaN]);
+            if isempty(EEGTMP.reject)
+                stats.removed_ica_components = 0;
+            else
+                stats.removed_ica_components = sum(EEGTMP.reject.gcompreject);
+            end
+            EEGTMP = pop_subcomp(EEGTMP,[],0);
+
+            % clean data using ASR - just the bad segment
+            EEGTMP = pop_clean_rawdata(EEGTMP,'FlatlineCriterion','off','ChannelCriterion','off',...
+                'LineNoiseCriterion','off','Highpass','off','BurstCriterion',20,...
+                'WindowCriterion',0.25,'BurstRejection','on','Distance','Euclidian',...
+                'WindowCriterionTolerances',[-Inf 7] );
+            stats.percentage_removed_data = 1-(EEGTMP.pnts/EEG(s).pnts);
+
+            % re-reference
+            EEGTMP = pop_reref(EEGTMP,[],'interpchan','off');
+            EEGTMP = pop_saveset(EEGTMP,'savemode','resave');
+            EEG    = eeg_store(EEG, EEGTMP, s); % does EEG(s) = EEGTMP but with extra checks
+            jsonwrite(fullfile(STUDY.filepath,[filesep EEGTMP.subject 'task_' TaskLabel{t} '_stats.json']), stats, 'prettyprint','on');
+        catch pipe_error
+            error_report{s} = pipe_error.message; %#ok<SAGROW>
+        end
+    end
+
+    % Save study
+    if exist('error_report','var')
+        mask = cellfun(@(x) ~isempty(x), error_report); % which subject/session
+        if all(mask)
+            save(fullfile(OutputLocation,'error_report_preprocessing'),error_report);
+            error('there has been a preprocessing issue with all included datasets, cannot proceed');
+        else
+            STUDY = std_rmdat(STUDY, EEG, 'datinds', find(mask));
+            EEG(mask) = [];
+        end
+    end
+    ALLEEG = EEG;
+
+    % Extract data epochs (windowing as per ERP core github)
+    if strcmpi(TaskLabel{t},'ERN')
+        eventTypes = {'111','112','121','122','211','212','221','222'};
+        EEG = pop_epoch(ALLEEG,eventTypes,epoch_window(t,:) ,'epochinfo','yes');
+    elseif strcmpi(TaskLabel{t},'MMN')
+        eventTypes = {'80','70'};
+        EEG = pop_epoch(ALLEEG,eventTypes,epoch_window(t,:) ,'epochinfo','yes');
+    elseif strcmpi(TaskLabel{t},'N170')
+        eventTypes = {'faces','cars','scrambled_faces','scrambled_cars'};
+        EEG = pop_epoch(ALLEEG,eventTypes, epoch_window(t,:) ,'epochinfo','yes');
+    elseif strcmpi(TaskLabel{t},'N2pc')
+        eventTypes = {'111','112','121','122','211','212','221','222'};
+        EEG = pop_epoch(ALLEEG,eventTypes,epoch_window(t,:) ,'epochinfo','yes');
+    elseif strcmpi(TaskLabel{t},'N400')
+        eventTypes = {'111','112','121','122','211','212','221','222'};
+        EEG = pop_epoch(ALLEEG,eventTypes, epoch_window(t,:) ,'epochinfo','yes');
+    elseif strcmpi(TaskLabel{t},'P3')
+        eventTypes = {'11','12','13','14','15','21','22','23','24','25',...
+            '31','32','33','34','35','41','42','43','44','45','51','52','53','54','55'};
+        EEG = pop_epoch(ALLEEG,eventTypes, epoch_window(t,:) ,'epochinfo','yes');
+    end
+    EEG    = eeg_checkset(EEG);
+    EEG    = pop_saveset(EEG, 'savemode', 'resave');
+    if any(strcmpi(TaskLabel{t},{'ERN','N170'}))
+        [STUDY, EEG] = std_editset(STUDY, EEG, 'commands',{{'remove',4}},'updatedat','on','rmclust','on');
+    elseif any(strcmpi(TaskLabel{t},{'P3'}))
+        [STUDY, EEG] = std_editset(STUDY, EEG, 'commands',{{'remove',4},{'remove',35}},'updatedat','on','rmclust','on');
+    end
+
+    % Create study design
+    STUDY  = std_checkset(STUDY, EEG);
+    STUDY  = std_makedesign(STUDY, EEG, 1, 'name',TaskLabel{t}, ...
+        'delfiles','off','defaultdesign','off','variable1','type','values1',{});
+
+    % Precompute ERP measures
+    [STUDY, EEG] = std_precomp(STUDY, EEG, {}, 'savetrials','on','interp','on','recompute','on',...
+        'erp','on','erpparams', {'rmbase' baseline_window(t,:)}, ...
+        'spec','off','ersp','off','itc','off');
+
+    % output preprocessed files
+    for s=size(EEG,2):-1:1
+        old = fullfile(EEG(s).filepath,EEG(s).filename(1:end-4));
+        EEG(s).setname = 'preprocessed';
+        EEG(s).filename = [EEG(s).filename(1:end-7) 'desc-preprocessed_eeg.set'];
+        EEG(s) = pop_saveset(EEG(s), 'filename', [EEG(s).filename(1:end-7) 'desc-preprocessed_eeg.set'], 'filepath', EEG(s).filepath);
+        STUDY.datasetinfo(s).filename = EEG(s).filename;
+        delete([old '.set']);
+        delete([old '.fdt']);
+    end
+    STUDY  = std_checkset(STUDY, EEG);
+    pop_savestudy(STUDY,EEG,'savemode','resave');
+end
+
+% -------------------
+%% Statistics
+% -----------------
+for t = 1:length(TaskLabel)
+    clear STUDY EEG
+    [STUDY,EEG] = pop_loadstudy(fullfile(outdir,[TaskLabel{t} '.study']));
+    for est=1:2
+        [STUDY, files] = std_limo(STUDY, EEG, 'method',estimation{est},...
+            'measure','daterp', 'chanloc',AvgChanlocs,...
+            'timelim',analysis_window(t,:),'erase','on',...
+            'splitreg','off','interaction','off');
+
+        if isempty(STUDY.filepath) % this seems to happen no unknown reason
+            STUDY.filepath = outdir;
+        end
+        STUDY  = std_checkset(STUDY, EEG);
+        pop_savestudy(STUDY,EEG,'savemode','resave')
+
+        % add contrasts - which is study specific and run 2nd level
+        if strcmpi(TaskLabel{t},'MMN')
+
+            resultdir = fullfile([outdir filesep 'derivatives'],...
+                ['LIMO_MMN' filesep estimation{est}]);
+            mkdir(resultdir);
+            cd(resultdir);
+            limo_random_select('paired t-test',AvgChanlocs,...
+                'LIMOfiles',fullfile(files.LIMO,"Beta_files_MMN_MMN_GLM_Channels_Time_OLS.txt"), ...
+                'parameter',[1 2], 'analysis_type',...
+                'Full scalp analysis', 'type','Channels','nboot',0,'tfce',tfce);
+            limo_get_effect_size('Paired_Samples_Ttest_parameter_1_2.mat')
+            % ERPs (use limo_add_plots to visualize)
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_MMN_MMN_GLM_Channels_Time_' estimation{est} '.txt']), ...
+                1, AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_deviant')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_MMN_MMN_GLM_Channels_Time_' estimation{est} '.txt']), ...
+                2, AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_standard')
+            Diff = limo_plot_difference('ERPs_deviant_single_subjects_Weighted mean.mat',...
+                'ERPs_standard_single_subjects_Weighted mean.mat',...
+                'type','paired','fig',0,'name','ERP_MMN');
+            save('ERP_difference','Diff')
+
+            resultdir = fullfile([outdir filesep 'derivatives'],...
+                ['LIMO_MMN' filesep 'weighted_' estimation{est}]);
+            mkdir(resultdir);
+            cd(resultdir);
+            limo_random_select('paired t-test',AvgChanlocs,...
+                'LIMOfiles',fullfile(files.LIMO,"Beta_files_MMN_MMN_GLM_Channels_Time_OLS.txt"), ...
+                'parameter',[1 2], 'analysis_type','method','weighted',...
+                'Full scalp analysis', 'type','Channels','nboot',0,'tfce',tfce);
+            limo_get_effect_size('Paired_Samples_Ttest_parameter_1_2.mat')
+
+        elseif strcmpi(TaskLabel{t},'N170')
+
+            resultdir = fullfile([outdir filesep 'derivatives'],...
+                ['LIMO_N170' filesep estimation{est}]);
+            mkdir(resultdir);
+            cd(resultdir);
+
+            % there are two analyses
+            % faces vs cars
+            % faces-scrambled vs cars-scrambled
+            mkdir('Cars_vs_Faces'); cd('Cars_vs_Faces');
+            limo_random_select('paired t-test',AvgChanlocs,...
+                'LIMOfiles',files.Beta, 'parameter',[2 1], 'analysis_type',...
+                'Full scalp analysis', 'type','Channels','nboot',nboot,'tfce',tfce);
+            limo_get_effect_size('Paired_Samples_Ttest_parameter_2_1.mat')
+            % ERPs (use limo_add_plots to visualize)
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_N170_N170_GLM_Channels_Time_' estimation{est} '.txt']), ...
+                1, AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_Cars')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_N170_N170_GLM_Channels_Time_' estimation{est} '.txt']), ...
+                2, AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_Faces')
+            Diff = limo_plot_difference('ERPs_Faces_single_subjects_Weighted mean.mat',...
+                'ERPs_Cars_single_subjects_Weighted mean.mat',...
+                'type','paired','fig',0,'name','ERP_Difference');
+            save('ERP_difference','Diff')
+
+            cd(resultdir); mkdir('Cars_vs_Faces_controlled'); cd('Cars_vs_Faces_controlled'); clear data
+            limo_random_select('Repeated Measures ANOVA',AvgChanlocs,...
+                'LIMOfiles',{fullfile(files.LIMO,['Beta_files_N170_N170_GLM_Channels_Time_' estimation{est} '.txt'])}, ...
+                'analysis type','Full scalp analysis', 'parameters',{[1 2],[3 4]}, ...
+                'factor names',{'Scrambling','Category'},'type','Channels',...
+                'nboot',nboot,'tfce',tfce,'skip design check','yes');
+            limo_get_effect_size('Rep_ANOVA_Main_effect_1_Scrambling.mat')
+            limo_get_effect_size('Rep_ANOVA_Main_effect_2_Category.mat')
+            limo_get_effect_size('Rep_ANOVA_Interaction_Factors_12.mat')
+            % Param avg (use limo_add_plots to visualize)
+            % we can also do double diff ERP if needed (do as above twice)
+            CarDiff  = [1 0 -1 0];
+            FaceDiff = [0 1 0 -1];
+            [~,~,LFiles] = limo_get_files([],[],[],...
+                fullfile(files.LIMO,['LIMO_files_N170_N170_GLM_Channels_Time_' estimation{est} '.txt']));
+            [~,R,BFiles] = limo_get_files([],[],[],...
+                fullfile(files.LIMO,['Beta_files_N170_N170_GLM_Channels_Time_' estimation{est} '.txt']));
+            clear con1_files con2_files
+            for s=length(LFiles):-1:1
+                name = limo_get_subname(R{s});
+                limo_contrast(fullfile(R{s},[name '_desc-Yr.mat']), BFiles{s}, LFiles{s}, 'T', 1, CarDiff);
+                limo_contrast(fullfile(R{s},[name '_desc-Yr.mat']), BFiles{s}, LFiles{s}, 'T', 1, FaceDiff);
+                con1_files{s,:} = fullfile(R{s},[name '_desc-con_1.mat']);
+                con2_files{s,:} = fullfile(R{s},[name '_desc-con_2.mat']);
+            end
+            writecell(con1_files,fullfile(files.LIMO,'con1_files.txt'))
+            writecell(con2_files,fullfile(files.LIMO,'con2_files.txt'))
+
+            limo_central_tendency_and_ci(fullfile(files.LIMO,'con1_files.txt'),...
+                1, AvgChanlocs, 'mean', 'Trimmed mean', [],'Con_Cars')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,'con2_files.txt'),...
+                1, AvgChanlocs, 'mean', 'Trimmed mean', [],'Con_Faces')
+            Diff = limo_plot_difference('Con_Faces_single_subjects_mean.mat',...
+                'Con_Cars_single_subjects_mean.mat',...
+                'type','paired','fig',0,'name','Con_diff');
+            save('Parameter_difference','Diff')
+
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_N170_N170_GLM_Channels_Time_' estimation{est} '.txt']), ...
+                1 , AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_Cars')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_N170_N170_GLM_Channels_Time_' estimation{est} '.txt']), ...
+                3, AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_Cars_control')
+            set1      = load('ERPs_Cars_single_subjects_Weighted mean.mat');
+            set2      = load('ERPs_Cars_control_single_subjects_Weighted mean.mat');
+            Data.data = set1.Data.data - set2.Data.data;
+            Data.limo = set1.Data.limo;
+            save('ERPs_Cars_diff_single_subjects_Weighted mean.mat','Data')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_N170_N170_GLM_Channels_Time_' estimation{est} '.txt']), ...
+                2, AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_Faces')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_N170_N170_GLM_Channels_Time_' estimation{est} '.txt']), ...
+                4, AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_Faces_control')
+            set1      = load('ERPs_Faces_single_subjects_Weighted mean.mat');
+            set2      = load('ERPs_Faces_control_single_subjects_Weighted mean.mat');
+            Data.data = set1.Data.data - set2.Data.data;
+            Data.limo = set1.Data.limo;
+            save('ERPs_Faces_diff_single_subjects_Weighted mean.mat','Data')
+            Diff = limo_plot_difference('ERPs_Faces_diff_single_subjects_Weighted mean.mat',...
+                'ERPs_Cars_diff_single_subjects_Weighted mean.mat',...
+                'type','paired','fig',0,'name','ERP_Faces_Cars_Difference');
+            save('ERP_difference','Diff')
+
+        elseif strcmpi(TaskLabel{t},'N400')
+
+            resultdir = fullfile([outdir filesep 'derivatives'],...
+                ['LIMO_N400' filesep estimation{est}]);
+            mkdir(resultdir);
+            cd(resultdir);
+            mkdir(resultdir);
+            cd(resultdir);
+
+            % 111 prime word, related word pair, list 1
+            % 112 prime word, related word pair, list 2
+            % 121 prime word, unrelated word pair, list 1
+            % 122 prime word, unrelated word pair, list 2
+            % 211 target word, related word pair, list 1
+            % 212 target word, related word pair, list 2
+            % 221 target word, unrelated word pair, list 1
+            % 222 target word, unrelated word pair, list 2
+            related   = [0 0 0 0 1 1 0 0];
+            unrelated = [0 0 0 0 0 0 1 1];
+            [~,~,LFiles] = limo_get_files([],[],[],...
+                fullfile(files.LIMO,['LIMO_files_N400_N400_GLM_Channels_Time_' estimation{est} '.txt']));
+            [~,R,BFiles] = limo_get_files([],[],[],...
+                fullfile(files.LIMO,['Beta_files_N400_N400_GLM_Channels_Time_' estimation{est} '.txt']));
+
+            clear con1_files con2_files
+            for s=length(LFiles):-1:1
+                name    = limo_get_subname(R{s}); % name
+                s_value = find(arrayfun(@(x) strcmpi(x.subject,name),STUDY.limo.subjects)); % ensure match
+                cond    = unique(STUDY.limo.subjects(s_value).cat_file);
+                limo_contrast(fullfile(R{s},[name '_desc-Yr.mat']), BFiles{s}, LFiles{s}, 'T', 1, related(cond));
+                limo_contrast(fullfile(R{s},[name '_desc-Yr.mat']), BFiles{s}, LFiles{s}, 'T', 1, unrelated(cond));
+                con1_files{s,:} = fullfile(R{s},[name '_desc-con_1.mat']);
+                con2_files{s,:} = fullfile(R{s},[name '_desc-con_2.mat']);
+            end
+            writecell(con1_files,fullfile(files.LIMO,'con1_files.txt'))
+            writecell(con2_files,fullfile(files.LIMO,'con2_files.txt'))
+
+            clear data
+            for N=size(con1_files,1):-1:1
+                data{1,N} = con1_files{N};
+                data{2,N} = con2_files{N};
+            end
+            limo_random_select('paired t-test',AvgChanlocs,...
+                'LIMOfiles',data, 'analysis_type',...
+                'Full scalp analysis', 'type','Channels','nboot',nboot,'tfce',tfce);
+            limo_get_effect_size('Paired_Samples_Ttest_parameter_1_2.mat')
+            % Param avg (use limo_add_plots to visualize)
+            limo_central_tendency_and_ci(fullfile(files.LIMO,'con1_files.txt'),...
+                1, AvgChanlocs, 'mean', 'Trimmed mean', [],'Con_related')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,'con2_files.txt'),...
+                1, AvgChanlocs, 'mean', 'Trimmed mean', [],'Con_unrelated')
+            Diff = limo_plot_difference('Con_unrelated_single_subjects_mean.mat',...
+                'Con_related_single_subjects_mean.mat',...
+                'type','paired','fig',0,'name','Con_diff');
+            save('Parameter_difference','Diff')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_N400_N400_GLM_Channels_Time_' estimation{est} '.txt']),...
+                'con_1', AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_related')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_N400_N400_GLM_Channels_Time_' estimation{est} '.txt']),...
+                'con_2', AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_unrelated')
+            Diff = limo_plot_difference('ERPs_unrelated_single_subjects_Weighted mean.mat',...
+                'ERPs_related_single_subjects_Weighted mean.mat',...
+                'type','paired','fig',0,'name','ERP_diff');
+            save('ERP_difference','Diff')
+
+        elseif strcmpi(TaskLabel{t},'P3')
+
+            resultdir = fullfile([outdir filesep 'derivatives'],...
+                ['LIMO_P3' filesep estimation{est}]);
+            mkdir(resultdir);
+            cd(resultdir);
+            mkdir(resultdir);
+            cd(resultdir);
+
+            % 11: Stimulus - block target A, trial stimulus A,
+            % 22: Stimulus - block target B, trial stimulus B,
+            % 33: Stimulus - block target C, trial stimulus C,
+            % 44: Stimulus - block target D, trial stimulus D,
+            % 55: Stimulus - block target E, trial stimulus E,
+            % 12, 13, 14, 15
+            % 21, 23, 24, 25
+            % 31, 32, 34, 35
+            % 41, 42, 43, 45
+            % 51, 52, 53, 54
+            distractor = [0 1 1 1 1 1 0 1 1 1 1 1 0 1 1 1 1 1 0 1 1 1 1 1 0];
+            target     = distractor==0;
+            [~,~,LFiles] = limo_get_files([],[],[],...
+                fullfile(files.LIMO,['LIMO_files_P3_P3_GLM_Channels_Time_' estimation{est} '.txt']));
+            [~,R,BFiles] = limo_get_files([],[],[],...
+                fullfile(files.LIMO,['Beta_files_P3_P3_GLM_Channels_Time_' estimation{est} '.txt']));
+
+            clear con1_files con2_files
+            for s=length(LFiles):-1:1
+                name    = limo_get_subname(R{s}); % name
+                s_value = find(arrayfun(@(x) strcmpi(x.subject,name),STUDY.limo.subjects)); % ensure match
+                cond    = unique(STUDY.limo.subjects(s_value).cat_file);
+                limo_contrast(fullfile(R{s},[name '_desc-Yr.mat']), BFiles{s}, LFiles{s}, 'T', 1, distractor(cond));
+                limo_contrast(fullfile(R{s},[name '_desc-Yr.mat']), BFiles{s}, LFiles{s}, 'T', 1, target(cond));
+                con1_files{s,:} = fullfile(R{s},[name '_desc-con_1.mat']);
+                con2_files{s,:} = fullfile(R{s},[name '_desc-con_2.mat']);
+            end
+            writecell(con1_files,fullfile(files.LIMO,'con1_files.txt'))
+            writecell(con2_files,fullfile(files.LIMO,'con2_files.txt'))
+
+            clear data
+            for N=size(con1_files,1):-1:1
+                data{1,N} = con2_files{N};
+                data{2,N} = con1_files{N};
+            end
+            limo_random_select('paired t-test',AvgChanlocs,...
+                'LIMOfiles',data, 'analysis_type',...
+                'Full scalp analysis', 'type','Channels','nboot',nboot,'tfce',tfce);
+            limo_get_effect_size('Paired_Samples_Ttest_parameter_2_1.mat')
+
+            % Param avg (use limo_add_plots to visualize)
+            limo_central_tendency_and_ci(fullfile(files.LIMO,'con1_files.txt'),...
+                1, AvgChanlocs, 'mean', 'Trimmed mean', [],'Con_distractors')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,'con2_files.txt'),...
+                1, AvgChanlocs, 'mean', 'Trimmed mean', [],'Con_targets')
+            Diff = limo_plot_difference('Con_targets_single_subjects_mean.mat',...
+                'Con_distractors_single_subjects_mean.mat',...
+                'type','paired','fig',0,'name','Con_diff');
+            save('Parameter_difference','Diff')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_P3_P3_GLM_Channels_Time_' estimation{est} '.txt']),...
+                'con_1', AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_distractors')
+            limo_central_tendency_and_ci(fullfile(files.LIMO,['LIMO_files_P3_P3_GLM_Channels_Time_' estimation{est} '.txt']),...
+                'con_2', AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'ERPs_targets')
+            Diff = limo_plot_difference('ERPs_targets_single_subjects_Weighted mean.mat',...
+                'ERPs_distractors_single_subjects_Weighted mean.mat',...
+                'type','paired','fig',0,'name','ERP_diff');
+            save('ERP_difference','Diff')
+        end
+    end
+    clear STUDY ALLEEG EEG
+end
+cd(current_folder)
