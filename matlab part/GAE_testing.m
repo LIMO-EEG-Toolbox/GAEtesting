@@ -1,3 +1,4 @@
+%% 
 % ERP Core - Whole Brain analysis
 % ----------------------------------------
 % The workflow below uses EEGLAB and LIMO MEEG to 
@@ -13,7 +14,7 @@
 
 clear variables
 eeglab('nogui')
-outdir = '/indirect/staff/cyrilpernet/multiverse_analyses/GAEtesting';
+outdir = 'E:\MThesis\processed_data';
 
 % task we process
 % Note ERN was removed as there is unequal design matrix depending on error
@@ -65,9 +66,9 @@ for t = 1 % 1:length(TaskLabel)
             mkdir(resultdir);
             cd(resultdir);
             limo_random_select('paired t-test',AvgChanlocs,...
-                'LIMOfiles',fullfile(files.LIMO,"Beta_files_MMN_MMN_GLM_Channels_Time_OLS.txt"), ...
+                'LIMOfiles',char(fullfile(files.LIMO,"Beta_files_MMN_MMN_GLM_Channels_Time_OLS.txt")), ...
                 'parameter',[1 2], 'analysis_type',...
-                'Full space analysis', 'type','Channels','nboot',0,'tfce',tfce);
+                'Full scalp analysis', 'type','Channels','nboot',0,'tfce',tfce);
             limo_get_effect_size('Paired_Samples_Ttest_parameter_1_2.mat')
    
             resultdir = fullfile([outdir filesep 'derivatives'],...
@@ -75,8 +76,8 @@ for t = 1 % 1:length(TaskLabel)
             mkdir(resultdir);
             cd(resultdir);
             limo_random_select('paired t-test',AvgChanlocs,...
-                'LIMOfiles',fullfile(files.LIMO,"Beta_files_MMN_MMN_GLM_Channels_Time_OLS.txt"), ...
-                'parameter',[1 2], 'analysis_type','Full space analysis', ...
+                'LIMOfiles',char(fullfile(files.LIMO,"Beta_files_MMN_MMN_GLM_Channels_Time_OLS.txt")), ...
+                'parameter',[1 2], 'analysis_type','Full scalp analysis', ...
                 'method','weighted','type','Channels','nboot',0,'tfce',tfce,...
                 'saveGAE','yes');
             limo_get_effect_size('Paired_Samples_Ttest_parameter_1_2.mat')

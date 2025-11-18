@@ -23,51 +23,39 @@ expected_chanlocs = load(chanlocs_path).expected_chanlocs;
 [nBeta, nSubject, nChan] = size(chan_drop);
 
 for iBeta = 1:nBeta
-    val = squeeze(mean(chan_drop(iBeta,:,:), 2));
-    [grid_or_val, ~, ~]= ...
-            topoplot(val,expected_chanlocs,'style','both','electrodes','off','hcolor','none','numcontour',0,'whitebk','on','noplot','on','conv','on');
-    freqmap = grid_or_val(end:-1:1,:);
-    freqmap(34,67)=NaN;freqmap(67,34)=NaN;freqmap(34,1)=NaN;freqmap(1,34)=NaN;
-    if min(freqmap(:))<0
-        freqmap = freqmap + abs(min(freqmap(:)));
-    end
+    val_drop = squeeze(mean(chan_drop(iBeta,:,:), 2));
+    title_drop = sprintf('Channel Importance Drop Method | beta #%d', iBeta);
+    filename_drop = sprintf('Imp_scalp_beta_%02d_drop.png', iBeta);
+    plot_chan_importance(val_drop, expected_chanlocs, ...
+                         title_drop, plotSaveFolder, filename_drop);
 
-    figure('Color','w','NumberTitle','off','Name','limo_best_electrodes.m')
-    opt = {'electrodes','on','maplimits','maxmin','verbose','off','colormap', flipud(limo_color_images(freqmap))};
-    topoplot(val,expected_chanlocs,opt{:});
-    title(sprintf('Channel Importance Drop Method | beta #%d', iBeta))
-    exportgraphics(gcf, fullfile(plotSaveFolder, sprintf('Imp_scalp_beta_%02d_drop.png', iBeta)));
-    close(gcf);
+    val_mean = squeeze(mean(chan_mean(iBeta,:,:), 2));
+    title_mean = sprintf('Channel Importance Mean Method | beta #%d', iBeta);
+    filename_mean = sprintf('Imp_scalp_beta_%02d_mean.png', iBeta);
+    plot_chan_importance(val_mean, expected_chanlocs, ...
+                         title_mean, plotSaveFolder, filename_mean);
 
-    val = squeeze(mean(chan_mean(iBeta,:,:), 2));
-    [grid_or_val, ~, ~]= ...
-            topoplot(val,expected_chanlocs,'style','both','electrodes','off','hcolor','none','numcontour',0,'whitebk','on','noplot','on','conv','on');
-    freqmap = grid_or_val(end:-1:1,:);
-    freqmap(34,67)=NaN;freqmap(67,34)=NaN;freqmap(34,1)=NaN;freqmap(1,34)=NaN;
-    if min(freqmap(:))<0
-        freqmap = freqmap + abs(min(freqmap(:)));
-    end
+    val_zero = squeeze(mean(chan_zero(iBeta,:,:), 2));
+    title_zero = sprintf('Channel Importance Zero Method | beta #%d', iBeta);
+    filename_zero = sprintf('Imp_scalp_beta_%02d_zero.png', iBeta);
+    plot_chan_importance(val_zero, expected_chanlocs, ...
+                         title_zero, plotSaveFolder, filename_zero);
+end
 
-    figure('Color','w','NumberTitle','off','Name','limo_best_electrodes.m')
-    opt = {'electrodes','on','maplimits','maxmin','verbose','off','colormap', flipud(limo_color_images(freqmap))};
-    topoplot(val,expected_chanlocs,opt{:});
-    title(sprintf('Channel Importance Mean Method | beta #%d', iBeta))
-    exportgraphics(gcf, fullfile(plotSaveFolder, sprintf('Imp_scalp_beta_%02d_mean.png', iBeta)));
-    close(gcf);
+function plot_chan_importance(val, expected_chanlocs, ...
+                         title_str, plotSaveFolder, filename)
 
-    val = squeeze(mean(chan_zero(iBeta,:,:), 2));
-    [grid_or_val, ~, ~]= ...
-            topoplot(val,expected_chanlocs,'style','both','electrodes','off','hcolor','none','numcontour',0,'whitebk','on','noplot','on','conv','on');
-    freqmap = grid_or_val(end:-1:1,:);
-    freqmap(34,67)=NaN;freqmap(67,34)=NaN;freqmap(34,1)=NaN;freqmap(1,34)=NaN;
-    if min(freqmap(:))<0
-        freqmap = freqmap + abs(min(freqmap(:)));
-    end
+    val_centered = val - mean(val);
+    c = max(abs(val_centered));
+    figure('Color','w','NumberTitle','off','Name','limo_best_electrodes.m');
+    opt = {'electrodes','on', ...
+           'maplimits',[-c c], ...
+           'verbose','off', ...
+           'colormap', flipud(limo_color_images(val_centered))};
 
-    figure('Color','w','NumberTitle','off','Name','limo_best_electrodes.m')
-    opt = {'electrodes','on','maplimits','maxmin','verbose','off','colormap', flipud(limo_color_images(freqmap))};
-    topoplot(val,expected_chanlocs,opt{:});
-    title(sprintf('Channel Importance Zero Method | beta #%d', iBeta))
-    exportgraphics(gcf, fullfile(plotSaveFolder, sprintf('Imp_scalp_beta_%02d_zero.png', iBeta)));
+    topoplot(val_centered, expected_chanlocs, opt{:});
+    %colorbar;
+    title(title_str);
+    exportgraphics(gcf, fullfile(plotSaveFolder, filename));
     close(gcf);
 end
