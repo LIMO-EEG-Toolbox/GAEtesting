@@ -1,8 +1,7 @@
-%% 
-% ERP Core - Whole Brain analysis
+ ERP Core - Whole Brain analysis
 % ----------------------------------------
-% The workflow below uses EEGLAB and LIMO MEEG to 
-% perform that statistical analyses - the 1st level 
+% The workflow below uses EEGLAB and LIMO MEEG to
+% perform that statistical analyses - the 1st level
 % analysis is done with and without trial weighting (see
 % https://doi.org/10.52294/ApertureNeuro.2022.2.SEOO9435)
 % and the group level analysis with and without
@@ -14,7 +13,7 @@
 
 clear variables
 eeglab('nogui')
-outdir = 'E:\MThesis\processed_data';
+outdir = '/indirect/staff/cyrilpernet/multiverse_analyses/GAEtesting';
 
 % task we process
 % Note ERN was removed as there is unequal design matrix depending on error
@@ -34,53 +33,94 @@ rng('default');
 current_folder = pwd;
 
 % analysis parameters
-estimation   = {'OLS','WLS'};
+estimation   = 'WLS';
 nboot        = 1000;
 tfce         = 0;
 
 % -------------------
 %% Statistics
 % -----------------
+
 for t = 1 % 1:length(TaskLabel)
     clear STUDY EEG
     [STUDY,EEG] = pop_loadstudy(fullfile(outdir,[TaskLabel{t} '.study']));
     AvgChanlocs = load(fullfile(outdir,[char(TaskLabel{t}) '-AvgChanlocs.mat']));
     AvgChanlocs = AvgChanlocs.AvgChanlocs;
-    for est=1:2
-        [STUDY, files] = std_limo(STUDY, EEG, 'method',estimation{est},...
-            'measure','daterp', 'chanloc',AvgChanlocs,...
-            'timelim',analysis_window(t,:),'erase','on',...
-            'splitreg','off','interaction','off');
+    [STUDY, files] = std_limo(STUDY, EEG, 'method',estimation,...
+        'measure','daterp', 'chanloc',AvgChanlocs,...
+        'timelim',analysis_window(t,:),'erase','on',...
+        'splitreg','off','interaction','off');
 
-        if isempty(STUDY.filepath) % this seems to happen no unknown reason
-            STUDY.filepath = outdir;
-        end
-        STUDY  = std_checkset(STUDY, EEG);
-        pop_savestudy(STUDY,EEG,'savemode','resave')
+    if isempty(STUDY.filepath) % this seems to happen no unknown reason
+        STUDY.filepath = outdir;
+    end
+    STUDY  = std_checkset(STUDY, EEG);
+    pop_savestudy(STUDY,EEG,'savemode','resave')
 
-        % add contrasts - which is study specific and run 2nd level
-        if strcmpi(TaskLabel{t},'MMN')
+    % add contrasts - which is study specific and run 2nd level
+    if strcmpi(TaskLabel{t},'MMN')
 
-            resultdir = fullfile([outdir filesep 'derivatives'],...
-                ['LIMO_MMN' filesep estimation{est}]);
-            mkdir(resultdir);
-            cd(resultdir);
-            limo_random_select('paired t-test',AvgChanlocs,...
-                'LIMOfiles',char(fullfile(files.LIMO,"Beta_files_MMN_MMN_GLM_Channels_Time_OLS.txt")), ...
-                'parameter',[1 2], 'analysis_type',...
-                'Full scalp analysis', 'type','Channels','nboot',0,'tfce',tfce);
-            limo_get_effect_size('Paired_Samples_Ttest_parameter_1_2.mat')
-   
-            resultdir = fullfile([outdir filesep 'derivatives'],...
-                ['LIMO_MMN' filesep 'weighted_' estimation{est}]);
-            mkdir(resultdir);
-            cd(resultdir);
-            limo_random_select('paired t-test',AvgChanlocs,...
-                'LIMOfiles',char(fullfile(files.LIMO,"Beta_files_MMN_MMN_GLM_Channels_Time_OLS.txt")), ...
-                'parameter',[1 2], 'analysis_type','Full scalp analysis', ...
-                'method','weighted','type','Channels','nboot',0,'tfce',tfce,...
-                'saveGAE','yes');
-            limo_get_effect_size('Paired_Samples_Ttest_parameter_1_2.mat')
+        resultdir = fullfile([outdir filesep 'derivatives'],...
+            ['LIMO_MMN' filesep 'robust t-test']);
+        mkdir(resultdir);
+        cd(resultdir);
+        limo_random_select('paired t-test',AvgChanlocs,...
+            'LIMOfiles',fullfile(files.LIMO,'Beta_files_MMN_MMN_GLM_Channels_Time_WLS.txt'), ...
+            'parameter',[1 2], 'analysis_type','Full space analysis', ...
+            'method','robust','type','Channels','nboot',nboot,'tfce',tfce);
+
+        resultdir = fullfile([outdir filesep 'derivatives'],...
+            ['LIMO_MMN' filesep 'weighted t-test']);
+        mkdir(resultdir);
+        cd(resultdir);
+        limo_random_select('paired t-test',AvgChanlocs,...
+            'LIMOfiles',fullfile(files.LIMO,'Beta_files_MMN_MMN_GLM_Channels_Time_WLS.txt'), ...
+            'parameter',[1 2], 'analysis_type','Full space analysis', ...
+            'method','weighted','type','Channels','nboot',nboot,'tfce',tfce,...
+            'saveGAE','yes');
+        limo_get_effect_size('Paired_Samples_Ttest_parameter_1_2.mat')
+
+        resultdir = fullfile([outdir filesep 'derivatives'],...
+            ['LIMO_MMN' filesep 't-test']);
+        mkdir(resultdir);
+        cd(resultdir);
+        limo_random_select('paired t-test',AvgChanlocs,...
+            'LIMOfiles',fullfile(files.LIMO,'Beta_files_MMN_MMN_GLM_Channels_Time_WLS.txt'), ...
+            'parameter',[1 2], 'analysis_type','Full space analysis', ...
+            'method','mean','type','Channels','nboot',nboot,'tfce',tfce);
+        limo_get_effect_size('Paired_Samples_Ttest_parameter_1_2.mat')
+
+        % compute the MMN ERP using the different schemes
+        resultdir = fullfile([outdir filesep 'derivatives'],...
+            ['LIMO_MMN' filesep 'ERPs']);
+        mkdir(resultdir);
+        cd(resultdir);        
+        limo_central_tendency_and_ci(fullfile(files.LIMO,'LIMO_files_MMN_MMN_GLM_Channels_Time_WLS.txt'),...
+            1, AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'Robust_ERPs_deviant')
+        limo_central_tendency_and_ci(fullfile(files.LIMO,'LIMO_files_MMN_MMN_GLM_Channels_Time_WLS.txt'),...
+            2, AvgChanlocs, 'Weighted mean', 'Trimmed mean', [], 'Robust_ERPs_standard')
+        Diff = limo_plot_difference('Robust_ERPs_deviant_single_subjects_Weighted mean.mat',...
+            'Robust_ERPs_standard_single_subjects_Weighted mean.mat',...
+            'type','paired','fig',1,'name','Robust_ERP_MMN');
+        save('Robust_ERP_difference','Diff')
+
+        limo_central_tendency_and_ci(fullfile(files.LIMO,'LIMO_files_MMN_MMN_GLM_Channels_Time_WLS.txt'),...
+            1, AvgChanlocs, 'Weighted mean', 'Weighted mean', [], 'Weighted_ERPs_deviant')
+        limo_central_tendency_and_ci(fullfile(files.LIMO,'LIMO_files_MMN_MMN_GLM_Channels_Time_WLS.txt'),...
+            2, AvgChanlocs, 'Weighted mean', 'Weighted mean', [], 'Weighted_ERPs_standard')
+        Diff = limo_plot_difference('Weighted_ERPs_deviant_single_subjects_Weighted mean.mat',...
+            'Weighted_ERPs_standard_single_subjects_Weighted mean.mat',...
+            'type','paired','fig',1,'name','Weighted_ERP_MMN');
+        save('Weighted_ERP_difference','Diff')
+
+        limo_central_tendency_and_ci(fullfile(files.LIMO,'LIMO_files_MMN_MMN_GLM_Channels_Time_WLS.txt'),...
+            1, AvgChanlocs, 'Weighted mean', 'Mean', [], 'ERPs_deviant')
+        limo_central_tendency_and_ci(fullfile(files.LIMO,'LIMO_files_MMN_MMN_GLM_Channels_Time_WLS.txt'),...
+            2, AvgChanlocs, 'Weighted mean', 'Mean', [], 'ERPs_standard')
+        Diff = limo_plot_difference('ERPs_deviant_single_subjects_Weighted mean.mat',...
+            'ERPs_standard_single_subjects_Weighted mean.mat',...
+            'type','paired','fig',1,'name','ERP_MMN');
+        save('ERP_difference','Diff')
 
         elseif strcmpi(TaskLabel{t},'N170')
 
