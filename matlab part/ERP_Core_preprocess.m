@@ -6,7 +6,7 @@
 
 clear variables
 InputDataset   = 'E:\MThesis\Tutorial\ERP_CORE_BIDS_Raw_Files';
-OutputLocation = 'E:\MThesis\processed_data';
+OutputLocation = 'E:\MThesis\P3_processed';
 ERP_Core_check_install
 
 % task we process
@@ -17,7 +17,8 @@ ERP_Core_check_install
 % hemispheric differences, it does not reflect dirreclty what the GAE could
 % be representing (given we that we use here channel neighbouring for the
 % graph - adding hemispheric connection can/could change results, TBC).
-TaskLabel       = {'MMN','N170','N400','P3'};
+% TaskLabel       = {'MMN','N170','N400','P3'};
+TaskLabel       = {'P3'};
 
 % task parameters
 epoch_window    = repmat([-0.2 0.8],length(TaskLabel),1);
