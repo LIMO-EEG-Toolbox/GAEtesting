@@ -1,0 +1,1 @@
+test how differences in channels and group of subjects are processed by the GAE
