@@ -1,0 +1,51 @@
+{
+  "design": "One Monte Carlo: 3-channel additive bump on 6 vs 30 maps, AMP 64.0. Python two-sample t (mean / Yuen / LOCO-weighted Welch). LIMO spatial clustering on t^2 (MCC=2, minnbchan=2, forming p<0.05, bootstrap max-mass FWER).",
+  "clusterer": "limo",
+  "channels": [
+    "Pz",
+    "P3",
+    "PO3"
+  ],
+  "channel_index": [
+    13,
+    6,
+    10
+  ],
+  "n_A": 6,
+  "n_B": 30,
+  "amp": 64.0,
+  "nboot": 101,
+  "mean_W_planted": 0.0,
+  "mean_W_control": 1.1999999999999997,
+  "mean_W_planted_other": 1.0024926775106122,
+  "gae_seconds": 3.951936960220337,
+  "matlab": {
+    "ok": true,
+    "error": null,
+    "seconds": 13.571683168411255,
+    "cmd": "/Applications/MATLAB_R2026b.app/bin/matlab -batch addpath('/Users/juanfischer/Projects/TEMP_PROJECTNEURO/limo_sims'); run_limo_ttest('/Users/juanfischer/Projects/TEMP_PROJECTNEURO/limo_sims/work/threechan_n6', '/Users/juanfischer/Projects/TEMP_PROJECTNEURO/limo_tools', '/Users/juanfischer/Projects/TEMP_PROJECTNEURO/data/P3_limo/limo_chanlocs.mat');"
+  },
+  "cluster": {
+    "mean": {
+      "n_sig_cells": 124,
+      "max_th": 309.1114330897197,
+      "planted_any_cluster": true,
+      "planted_n_sig": 102,
+      "min_cluster_p": 0.009900990099009901
+    },
+    "yuen": {
+      "n_sig_cells": 137,
+      "max_th": 701.0295160616458,
+      "planted_any_cluster": true,
+      "planted_n_sig": 105,
+      "min_cluster_p": 0.009900990099009901
+    },
+    "weighted": {
+      "n_sig_cells": 0,
+      "max_th": 343.4304406209926,
+      "planted_any_cluster": false,
+      "planted_n_sig": 0,
+      "min_cluster_p": null
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "design": "2 vs 8 plants on 6 vs 30, matcher 10/10 LIMO FWER then equal t^2 mass, minnbchan=0. Each MC: GAE W, Python mean/Yuen/weighted t, limo_mass cluster_test. Forming occupancy, FWER occupancy, bootstrap max-mass H0.",
+  "n_mc": 200,
+  "nboot": 101,
+  "minnbchan": 0,
+  "a1": 45.305620431900024,
+  "a2": 24.28125,
+  "n_done": 200,
+  "seconds": 3928.076699256897
+}

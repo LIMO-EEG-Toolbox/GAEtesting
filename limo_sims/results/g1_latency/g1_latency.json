@@ -1,0 +1,53 @@
+{
+  "design": "Unbalanced whole-scalp 40 ms delay on n_A vs 20 unshifted, mixed pad. W refit each MC. Python t; LIMO cluster-mass FWER minnbchan=2 on all channels. 100 MCs, nboot=101.",
+  "shift_ms": 40.0,
+  "n_mc": 100,
+  "nboot": 101,
+  "minnbchan": 2,
+  "n_B": 20,
+  "n_A_grid": [
+    20,
+    15,
+    10,
+    6
+  ],
+  "summary": {
+    "20": {
+      "detect": {
+        "mean": 1.0,
+        "yuen": 1.0,
+        "weighted": 0.99
+      },
+      "mean_W_A": 1.0014777651362168,
+      "mean_W_B": 0.9985222348637832
+    },
+    "15": {
+      "detect": {
+        "mean": 0.96,
+        "yuen": 0.99,
+        "weighted": 0.97
+      },
+      "mean_W_A": 1.001430401382609,
+      "mean_W_B": 0.9989271989630432
+    },
+    "10": {
+      "detect": {
+        "mean": 0.96,
+        "yuen": 0.96,
+        "weighted": 0.96
+      },
+      "mean_W_A": 1.0029527699014402,
+      "mean_W_B": 0.9985236150492799
+    },
+    "6": {
+      "detect": {
+        "mean": 0.72,
+        "yuen": 0.81,
+        "weighted": 0.7
+      },
+      "mean_W_A": 1.0032918463707599,
+      "mean_W_B": 0.999012446088772
+    }
+  },
+  "seconds": 2595.921770095825
+}

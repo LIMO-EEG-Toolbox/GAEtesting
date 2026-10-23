@@ -1,0 +1,97 @@
+{
+  "design": "30 vs 14 mean Welch t. Boxcar Gaussian (peak 380 ms, width 40 ms) on n1=4 vs n2=8 disconnected anterior-posterior neighbourhoods. Floor is mean LIMO FWER (minnbchan=2, nboot=101) on 10 calibration splits (seeds [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), plants alone: smallest amp with 10/10 hits. Then equalize median FWER-cluster t^2 mass. Same minnbchan as the later test. Confirmation MCs must use new seeds.",
+  "clusterer": "limo",
+  "minnbchan": 2,
+  "nboot": 101,
+  "match_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "n_hit": 10,
+  "n1": 4,
+  "n2": 8,
+  "n_A": 14,
+  "n_B": 30,
+  "split_seed": 0,
+  "axis": "anterior-posterior",
+  "forming_alpha": 0.05,
+  "matched_mass": 1157.722399103477,
+  "a1": 18.836302757263184,
+  "a2": 13.72265625,
+  "region1": {
+    "n": 4,
+    "channels": [
+      12,
+      10,
+      11,
+      13
+    ],
+    "names": [
+      "Oz",
+      "PO3",
+      "O1",
+      "Pz"
+    ],
+    "side": "posterior",
+    "amp": 18.836302757263184,
+    "cluster_mass": 1134.8672552540986,
+    "forming_overlap_mass": 1134.8672552540986,
+    "max_th": 265.14728882806133,
+    "min_cluster_p": 0.009900990099009901,
+    "fwer_hit": true,
+    "fwer_n_hit": 10,
+    "fwer_n_mc": 10,
+    "max_abs_t": 5.796633156627892,
+    "t_peak": 4.657214412673756
+  },
+  "region2": {
+    "n": 8,
+    "channels": [
+      0,
+      1,
+      2,
+      15,
+      16,
+      3,
+      20,
+      5
+    ],
+    "names": [
+      "FP1",
+      "F3",
+      "F7",
+      "FP2",
+      "Fz",
+      "FC3",
+      "FCz",
+      "C5"
+    ],
+    "side": "anterior",
+    "amp": 13.72265625,
+    "cluster_mass": 1157.722399103477,
+    "forming_overlap_mass": 1157.722399103477,
+    "max_th": 261.18106524782866,
+    "min_cluster_p": 0.009900990099009901,
+    "fwer_hit": true,
+    "fwer_n_hit": 10,
+    "fwer_n_mc": 10,
+    "max_abs_t": 5.779841233453496,
+    "t_peak": 4.815195467690628
+  },
+  "floors": {
+    "a1": 15.890625,
+    "mass1": 528.1903820741593,
+    "hit1": 10,
+    "a2": 13.72265625,
+    "mass2": 1157.722399103477,
+    "hit2": 10
+  }
+}

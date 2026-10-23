@@ -1,0 +1,76 @@
+{
+  "design": "Frozen 30 vs 6 mean Welch t. Boxcar Gaussian (peak 380 ms, width 40 ms) on n1=3 vs n2=8 disconnected anterior-posterior neighbourhoods. Floor is mean LIMO cluster-mass FWER (minnbchan=2, nboot=101): smallest amp whose mask hits the planted channels. Then equalize FWER-cluster t^2 mass. Same minnbchan as the later test.",
+  "clusterer": "limo",
+  "minnbchan": 2,
+  "nboot": 101,
+  "n1": 3,
+  "n2": 8,
+  "n_A": 6,
+  "n_B": 30,
+  "split_seed": 0,
+  "axis": "anterior-posterior",
+  "forming_alpha": 0.05,
+  "matched_mass": 323.43586322614044,
+  "a1": 18.712950534555603,
+  "a2": 21.01458740234375,
+  "region1": {
+    "n": 3,
+    "channels": [
+      12,
+      10,
+      11
+    ],
+    "names": [
+      "Oz",
+      "PO3",
+      "O1"
+    ],
+    "side": "posterior",
+    "amp": 18.712950534555603,
+    "cluster_mass": 332.156606063472,
+    "forming_overlap_mass": 332.156606063472,
+    "max_th": 237.23491800709252,
+    "min_cluster_p": 0.03960396039603964,
+    "fwer_hit": true,
+    "max_abs_t": 4.151459600755826,
+    "t_peak": 3.1561251619026445
+  },
+  "region2": {
+    "n": 8,
+    "channels": [
+      0,
+      1,
+      2,
+      15,
+      16,
+      3,
+      20,
+      5
+    ],
+    "names": [
+      "FP1",
+      "F3",
+      "F7",
+      "FP2",
+      "Fz",
+      "FC3",
+      "FCz",
+      "C5"
+    ],
+    "side": "anterior",
+    "amp": 21.01458740234375,
+    "cluster_mass": 323.43586322614044,
+    "forming_overlap_mass": 323.43586322614044,
+    "max_th": 237.1645020092117,
+    "min_cluster_p": 0.03960396039603964,
+    "fwer_hit": true,
+    "max_abs_t": 5.082392196775029,
+    "t_peak": 4.091393814092134
+  },
+  "floors": {
+    "a1": 17.124191284179688,
+    "mass1": 249.1684815241761,
+    "a2": 21.01458740234375,
+    "mass2": 323.43586322614044
+  }
+}

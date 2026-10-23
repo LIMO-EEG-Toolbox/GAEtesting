@@ -1,0 +1,768 @@
+{
+  "design": "Isolation n1=[1, 2, 3, 4, 5] vs 8 on 30 vs 5, matcher and FWER minnbchan=0 if n1<3 else 2. Balance n1=1 vs 8, n planted [5, 6, 7, 8, 10, 11, 14, 17, 20, 25] vs 30, minnbchan=0. 100 held-out MCs seeds 10\u2013109.",
+  "n_mc": 100,
+  "nboot": 101,
+  "isolation": [
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 5,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 82.375,
+      "a2": 33.91860365867615,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.0,
+      "mean_W_n1_planted_sd": 0.0,
+      "mean_W_n2_planted": 0.6484006536651813,
+      "mean_W_n2_planted_sd": 0.08732028503194837,
+      "mean_W_n1_unplanted": 1.1666666666666667,
+      "mean_W_n1_unplanted_sd": 0.0,
+      "mean_W_n2_unplanted": 1.0585998910558032,
+      "mean_W_n2_unplanted_sd": 0.014553380838658083,
+      "mean_hit_n1": 0.99,
+      "mean_hit_n2": 1.0,
+      "weighted_hit_n1": 0.0,
+      "weighted_hit_n2": 0.97
+    },
+    {
+      "n1": 2,
+      "n2": 8,
+      "n_A": 5,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 58.741184055805206,
+      "a2": 30.1484375,
+      "n1_names": [
+        "Oz",
+        "PO3"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12,
+        10
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.02171762559323607,
+      "mean_W_n1_planted_sd": 0.05536626823230557,
+      "mean_W_n2_planted": 0.7641744755738153,
+      "mean_W_n2_planted_sd": 0.07923992223744795,
+      "mean_W_n1_unplanted": 1.163047062401128,
+      "mean_W_n1_unplanted_sd": 0.009227711372050973,
+      "mean_W_n2_unplanted": 1.0393042540710307,
+      "mean_W_n2_unplanted_sd": 0.013206653706241349,
+      "mean_hit_n1": 1.0,
+      "mean_hit_n2": 0.95,
+      "weighted_hit_n1": 0.19,
+      "weighted_hit_n2": 0.9
+    },
+    {
+      "n1": 3,
+      "n2": 8,
+      "n_A": 5,
+      "n_B": 30,
+      "minnbchan": 2,
+      "n_mc": 100,
+      "a1": 53.49963879585266,
+      "a2": 35.28515625,
+      "n1_names": [
+        "Oz",
+        "PO3",
+        "O1"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12,
+        10,
+        11
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.19325089380248997,
+      "mean_W_n1_planted_sd": 0.11480007727437079,
+      "mean_W_n2_planted": 0.6950670533288844,
+      "mean_W_n2_planted_sd": 0.08671772337029207,
+      "mean_W_n1_unplanted": 1.1344581843662518,
+      "mean_W_n1_unplanted_sd": 0.019133346212395128,
+      "mean_W_n2_unplanted": 1.050822157778519,
+      "mean_W_n2_unplanted_sd": 0.014452953895048703,
+      "mean_hit_n1": 1.0,
+      "mean_hit_n2": 0.98,
+      "weighted_hit_n1": 0.62,
+      "weighted_hit_n2": 0.95
+    },
+    {
+      "n1": 4,
+      "n2": 8,
+      "n_A": 5,
+      "n_B": 30,
+      "minnbchan": 2,
+      "n_mc": 100,
+      "a1": 47.40932559967041,
+      "a2": 35.28515625,
+      "n1_names": [
+        "Oz",
+        "PO3",
+        "O1",
+        "Pz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12,
+        10,
+        11,
+        13
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.4271052675821999,
+      "mean_W_n1_planted_sd": 0.12947683649602337,
+      "mean_W_n2_planted": 0.7354199134995977,
+      "mean_W_n2_planted_sd": 0.08529319911982883,
+      "mean_W_n1_unplanted": 1.0954824554029667,
+      "mean_W_n1_unplanted_sd": 0.02157947274933721,
+      "mean_W_n2_unplanted": 1.0440966810834003,
+      "mean_W_n2_unplanted_sd": 0.014215533186638117,
+      "mean_hit_n1": 1.0,
+      "mean_hit_n2": 0.98,
+      "weighted_hit_n1": 0.89,
+      "weighted_hit_n2": 0.94
+    },
+    {
+      "n1": 5,
+      "n2": 8,
+      "n_A": 5,
+      "n_B": 30,
+      "minnbchan": 2,
+      "n_mc": 100,
+      "a1": 38.23292303085327,
+      "a2": 35.28515625,
+      "n1_names": [
+        "Oz",
+        "PO3",
+        "O1",
+        "Pz",
+        "PO4"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12,
+        10,
+        11,
+        13,
+        28
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.825074172932423,
+      "mean_W_n1_planted_sd": 0.08525913279015118,
+      "mean_W_n2_planted": 0.7984089819965601,
+      "mean_W_n2_planted_sd": 0.07981768019412534,
+      "mean_W_n1_unplanted": 1.029154304511263,
+      "mean_W_n1_unplanted_sd": 0.014209855465025225,
+      "mean_W_n2_unplanted": 1.0335985030005732,
+      "mean_W_n2_unplanted_sd": 0.013302946699020875,
+      "mean_hit_n1": 1.0,
+      "mean_hit_n2": 0.98,
+      "weighted_hit_n1": 1.0,
+      "weighted_hit_n2": 0.97
+    }
+  ],
+  "balance": [
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 5,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 51.73046875,
+      "a2": 19.243202090263367,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.023888752064731116,
+      "mean_W_n1_planted_sd": 0.06473040101132724,
+      "mean_W_n2_planted": 0.9480751525011658,
+      "mean_W_n2_planted_sd": 0.06381303389822625,
+      "mean_W_n1_unplanted": 1.1626852079892116,
+      "mean_W_n1_unplanted_sd": 0.01078840016855455,
+      "mean_W_n2_unplanted": 1.0086541412498058,
+      "mean_W_n2_unplanted_sd": 0.010635505649704374,
+      "mean_hit_n1": 0.87,
+      "mean_hit_n2": 0.85,
+      "weighted_hit_n1": 0.2,
+      "weighted_hit_n2": 0.81
+    },
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 6,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 48.66796875,
+      "a2": 18.015143752098083,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.06418728441717922,
+      "mean_W_n1_planted_sd": 0.15878344455891652,
+      "mean_W_n2_planted": 0.9679317264616139,
+      "mean_W_n2_planted_sd": 0.04385625081972949,
+      "mean_W_n1_unplanted": 1.1871625431165642,
+      "mean_W_n1_unplanted_sd": 0.03175668891178337,
+      "mean_W_n2_unplanted": 1.0064136547076776,
+      "mean_W_n2_unplanted_sd": 0.008771250163945905,
+      "mean_hit_n1": 0.85,
+      "mean_hit_n2": 0.87,
+      "yuen_hit_n1": 0.79,
+      "yuen_hit_n2": 0.89,
+      "weighted_hit_n1": 0.27,
+      "weighted_hit_n2": 0.85
+    },
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 7,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 52.6171875,
+      "a2": 18.539544582366943,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.07578014668318651,
+      "mean_W_n1_planted_sd": 0.1645155859361929,
+      "mean_W_n2_planted": 0.9799039476705194,
+      "mean_W_n2_planted_sd": 0.032348740203806146,
+      "mean_W_n1_unplanted": 1.2156512991072568,
+      "mean_W_n1_unplanted_sd": 0.03838697005177845,
+      "mean_W_n2_unplanted": 1.0046890788768785,
+      "mean_W_n2_unplanted_sd": 0.007548039380888109,
+      "mean_hit_n1": 0.95,
+      "mean_hit_n2": 0.91,
+      "yuen_hit_n1": 0.89,
+      "yuen_hit_n2": 0.93,
+      "weighted_hit_n1": 0.3,
+      "weighted_hit_n2": 0.94
+    },
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 8,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 62.17781603336334,
+      "a2": 21.8828125,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.018963366422260205,
+      "mean_W_n1_planted_sd": 0.06594964158648792,
+      "mean_W_n2_planted": 0.9719760167001624,
+      "mean_W_n2_planted_sd": 0.04381056178089727,
+      "mean_W_n1_unplanted": 1.2616097689540635,
+      "mean_W_n1_unplanted_sd": 0.017586571089730024,
+      "mean_W_n2_unplanted": 1.00747306221329,
+      "mean_W_n2_unplanted_sd": 0.011682816474905945,
+      "mean_hit_n1": 0.98,
+      "mean_hit_n2": 0.99,
+      "yuen_hit_n1": 1.0,
+      "yuen_hit_n2": 0.99,
+      "weighted_hit_n1": 0.17,
+      "weighted_hit_n2": 0.99
+    },
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 10,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 52.838255643844604,
+      "a2": 16.71484375,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.25154199377976316,
+      "mean_W_n1_planted_sd": 0.25633779637858817,
+      "mean_W_n2_planted": 0.9976146879281101,
+      "mean_W_n2_planted_sd": 0.006569576045904771,
+      "mean_W_n1_unplanted": 1.2494860020734124,
+      "mean_W_n1_unplanted_sd": 0.08544593212619614,
+      "mean_W_n2_unplanted": 1.0007951040239633,
+      "mean_W_n2_unplanted_sd": 0.0021898586819682608,
+      "mean_hit_n1": 1.0,
+      "mean_hit_n2": 0.98,
+      "yuen_hit_n1": 0.99,
+      "yuen_hit_n2": 1.0,
+      "weighted_hit_n1": 0.72,
+      "weighted_hit_n2": 0.98
+    },
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 11,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 49.623483657836914,
+      "a2": 16.37890625,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.42919595215470496,
+      "mean_W_n1_planted_sd": 0.297916654640598,
+      "mean_W_n2_planted": 0.9974229868549598,
+      "mean_W_n2_planted_sd": 0.0055375293654450035,
+      "mean_W_n1_unplanted": 1.2092948175432747,
+      "mean_W_n1_unplanted_sd": 0.1092361067015526,
+      "mean_W_n2_unplanted": 1.000944904819848,
+      "mean_W_n2_unplanted_sd": 0.0020304274339965093,
+      "mean_hit_n1": 1.0,
+      "mean_hit_n2": 0.97,
+      "yuen_hit_n1": 0.99,
+      "yuen_hit_n2": 1.0,
+      "weighted_hit_n1": 0.87,
+      "weighted_hit_n2": 0.97
+    },
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 14,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 44.20759415626526,
+      "a2": 15.32421875,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.8259699257218398,
+      "mean_W_n1_planted_sd": 0.2206742158793002,
+      "mean_W_n2_planted": 0.9991301309411071,
+      "mean_W_n2_planted_sd": 0.003224678293046746,
+      "mean_W_n1_unplanted": 1.0812140346631416,
+      "mean_W_n1_unplanted_sd": 0.10298130074367343,
+      "mean_W_n2_unplanted": 1.00040593889415,
+      "mean_W_n2_unplanted_sd": 0.001504849870088472,
+      "mean_hit_n1": 1.0,
+      "mean_hit_n2": 0.99,
+      "yuen_hit_n1": 1.0,
+      "yuen_hit_n2": 0.99,
+      "weighted_hit_n1": 1.0,
+      "weighted_hit_n2": 0.98
+    },
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 17,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 37.17669904232025,
+      "a2": 12.2265625,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.9901458444388466,
+      "mean_W_n1_planted_sd": 0.03538811127224644,
+      "mean_W_n2_planted": 0.9995116537971991,
+      "mean_W_n2_planted_sd": 0.0036412287245922046,
+      "mean_W_n1_unplanted": 1.0055840214846534,
+      "mean_W_n1_unplanted_sd": 0.020053263054272956,
+      "mean_W_n2_unplanted": 1.0002767295149204,
+      "mean_W_n2_unplanted_sd": 0.002063362943935599,
+      "mean_hit_n1": 0.98,
+      "mean_hit_n2": 0.88,
+      "yuen_hit_n1": 1.0,
+      "yuen_hit_n2": 0.97,
+      "weighted_hit_n1": 0.99,
+      "weighted_hit_n2": 0.88
+    },
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 20,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 46.25712442398071,
+      "a2": 14.203125,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 0.9838165051238968,
+      "mean_W_n1_planted_sd": 0.08777629038686953,
+      "mean_W_n2_planted": 0.9995990780452206,
+      "mean_W_n2_planted_sd": 0.002736062070802422,
+      "mean_W_n1_unplanted": 1.0107889965840686,
+      "mean_W_n1_unplanted_sd": 0.0585175269245797,
+      "mean_W_n2_unplanted": 1.0002672813031863,
+      "mean_W_n2_unplanted_sd": 0.0018240413805349458,
+      "mean_hit_n1": 1.0,
+      "mean_hit_n2": 0.98,
+      "yuen_hit_n1": 1.0,
+      "yuen_hit_n2": 1.0,
+      "weighted_hit_n1": 1.0,
+      "weighted_hit_n2": 1.0
+    },
+    {
+      "n1": 1,
+      "n2": 8,
+      "n_A": 25,
+      "n_B": 30,
+      "minnbchan": 0,
+      "n_mc": 100,
+      "a1": 33.133198380470276,
+      "a2": 12.01171875,
+      "n1_names": [
+        "Oz"
+      ],
+      "n2_names": [
+        "FP1",
+        "F3",
+        "F7",
+        "FP2",
+        "Fz",
+        "FC3",
+        "FCz",
+        "C5"
+      ],
+      "region1_channels": [
+        12
+      ],
+      "region2_channels": [
+        0,
+        1,
+        2,
+        15,
+        16,
+        3,
+        20,
+        5
+      ],
+      "mean_W_n1_planted": 1.0,
+      "mean_W_n1_planted_sd": 0.0,
+      "mean_W_n2_planted": 0.9999770311597456,
+      "mean_W_n2_planted_sd": 0.002683961649335216,
+      "mean_W_n1_unplanted": 1.0,
+      "mean_W_n1_unplanted_sd": 0.0,
+      "mean_W_n2_unplanted": 1.0000191407002124,
+      "mean_W_n2_unplanted_sd": 0.00223663470777934,
+      "mean_hit_n1": 0.99,
+      "mean_hit_n2": 0.99,
+      "yuen_hit_n1": 1.0,
+      "yuen_hit_n2": 1.0,
+      "weighted_hit_n1": 1.0,
+      "weighted_hit_n2": 0.98
+    }
+  ],
+  "seconds": 9962.890571117401
+}

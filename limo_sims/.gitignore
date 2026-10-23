@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# mixed pad: build with mix_people.py (GitHub 100 MB cap)
+cache/mixed_pool.npz
+
+# MATLAB temp bundles
+work/
+
+# hit-rate per-MC dumps
+results/hitrate_2v8_a6/cells/
+
+# local paper scratch
+PAPER_REBUILD.md
+PAPER_TEXT_DIFF.html
