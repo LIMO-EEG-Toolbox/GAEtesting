@@ -4,11 +4,6 @@ Audit of leave-one-channel-out graph-autoencoder weights at LIMO EEG’s
 second level. The weighter is frozen. These scripts plant known hills on
 preprocessed ERP CORE P3 maps and read out \(W\) and LIMO cluster-mass FWER.
 
-## What to ship
-
-Copy **this folder** (`limo_sims/`) as a unit (e.g. into
-[LIMO-EEG-Toolbox/GAEtesting](https://github.com/LIMO-EEG-Toolbox/GAEtesting)).
-It already contains the frozen weighter and the 37 P3 maps.
 
 | Path | Role |
 |---|---|
@@ -16,10 +11,7 @@ It already contains the frozen weighter and the 37 P3 maps.
 | `limo_sims/gae_weighting.py` | **frozen** LOCO weighter. Do not edit. |
 | `limo_sims/data/P3_limo/` | 37 first-level maps + STUDY neighbourhood (~57 MB) |
 
-Do **not** ship `gae_audit/` paper-era drivers, the historical `GAEtesting/`
-xAI tree, or the Yhat MATLAB weighter (`limo_group_outliers.m` /
-`NiPyAEoutliers.py`). MATLAB `limo_tools` is only needed for the 3-channel
-smoke; set `LIMO_TOOLS` if that clone is not a sibling of this folder.
+
 
 ## Install
 
@@ -30,45 +22,38 @@ python limo_sims/mix_people.py            # once: mixed pad from the 37 reals
 
 ## Data (`load_cohort.py`)
 
-No machine-specific paths. Maps sit **in this folder**:
 
 ```
 limo_sims/data/P3_limo/
 ```
-
-(`_paths.py` → `HERE / "data" / "P3_limo"`). You do **not** need the 1.5 GB
-preprocessed EEG STUDY. `Beta_files.txt` lists relative paths
-(`sub-001/sub-001_desc-Betas.mat`, …). Output: `datain` (26 betas, GAE
-training), `Y` (`con_2 − con_1`), STUDY `adjacency` / `coords` / `labels`.
-
-The mixed pad is gitignored (GitHub 100 MB cap). After clone, run
+After clone, run
 `mix_people.py`; it writes `limo_sims/cache/mixed_pool.npz`. Large-arm
 paper runs (`pool.py`) need that file.
 
-MATLAB is optional. Paper figures never open it. The one MATLAB smoke is
+MATLAB is optional. The MATLAB smoke test is
 `check_threechan_n6.py`.
 
 ## LIMO clustering (why these files)
 
-We do **not** call `limo_random_robust`. The two-sample tests themselves
-are already in the frozen weighter (`yuen_t`, `weighted_welch_t`; mean is
-the same Welch with \(W=1\)). `tmaps.py` only wraps those calls, adds
-\(p\)-values, and shuffles labels for the bootstrap. What we still need
+We do not open MATLAB directly all the time. The two-sample tests themselves
+are already in the frozen weighter (`yuen_t`, `weighted_welch_t`). `tmaps.py` only wraps those calls. What we still need
 from LIMO is the **second-level cluster-mass FWER** (MCC = 2, Time maps):
 
-1. Forming cells: uncorrected \(p \le 0.05\).
-2. `limo_findcluster`: drop a channel unless it has `minnbchan` forming
-   neighbours at that sample; 4-connected in time; merge across the STUDY
-   graph.
-3. Mass = \(\sum t^2\) in a component.
-4. `limo_cluster_test`: same glue on each label shuffle; \(T\) is the
-   \((1-\alpha)\) quantile of the **max** cluster mass. A cluster survives
-   if its mass \(\ge T\).
+1. Keep every electrode×time cell whose uncorrected \(p\) is below 0.05
+   (the forming set).
+2. Glue those cells into blobs (`limo_findcluster`): along time on each
+   electrode, and across neighbouring electrodes on the STUDY graph. If
+   `minnbchan` is 2, drop a cell that does not have two forming neighbours
+   at that time point. If it is 0, keep even a single-electrode stripe.
+3. Score each blob by adding up \(t^2\) inside it (cluster mass).
+4. Repeat the same glue on each shuffled-label map. The FWER bar \(T\) is
+   a high quantile of the **largest** blob mass under those shuffles. A
+   real blob counts only if its mass is at least \(T\) (`limo_cluster_test`).
 
-`limo_clustering` in MATLAB **locks `minnbchan = 2`**. A 1- or 2-channel
-plant is deleted before FWER. The matcher also needs thousands of inner
-FWER calls. Opening MATLAB for each of those is too slow, and cannot turn
-the prune off.
+MATLAB’s `limo_clustering` always uses `minnbchan = 2`. That deletes a
+1- or 2-electrode plant before FWER can see it. The matcher also calls
+this test thousands of times, so opening MATLAB for every call is too
+slow, and we could not turn that prune off.
 
 So:
 
@@ -83,15 +68,12 @@ So:
   Default prune only. Kept so a 3-channel plant can still be checked in
   MATLAB (`run_mc.py` when \(n\ge 3\)).
 - **`match_limo.py`** — not a clusterer. In the paper we need two plants
-  of **different spatial extent** (broad moderate hill vs strong focal
-  hole) that are **equally significant under a mean \(t\)-test**, so that
+  of **different spatial extent** that are **equally significant under a mean \(t\)-test**, so that
   later GAE weighting is not just comparing a weak effect to a strong
-  one. The matcher never uses the GAE. It searches additive amplitudes on
+  one. It searches additive amplitudes on
   ordinary mean Welch \(t\) until, under this LIMO FWER, each plant is
-  detectable alone (10/10 hits on seeds 0–9) and the two FWER-surviving
-  overlap masses (\(\sum t^2\)) match. Peak \(t\) is not matched. Same
-  `minnbchan` as the later test; confirmation MCs use new seeds. The GAE
-  is applied afterwards, with those amplitudes frozen.
+  detectable alone (10/10 hits) and the two FWER-surviving
+  overlap masses (\(\sum t^2\)) match.
 
 `minnbchan=0` if planted \(n<3\); `minnbchan=2` if \(n\ge 3\). Matcher and
 test always share that choice.
@@ -100,7 +82,7 @@ We *could* have used the full MATLAB LIMO clusterer whenever the plant
 has three or more channels (`minnbchan=2` is LIMO’s default) and kept
 the Python copy only for \(n=1\) and \(n=2\), where MATLAB would prune
 the island. Paper runs use the Python copy everywhere so matcher
-bisections and Monte Carlos do not open MATLAB.
+bisections and Monte Carlos do not open MATLAB. limo_sims/check_threechan_n6.py shows how the pipline can be modified to use MATLAB LIMO.
 
 ```bash
 python limo_sims/check_threechan_n6.py    # MATLAB smoke, 3-channel triangle
@@ -118,8 +100,7 @@ python limo_sims/match_1v8_a5.py          # matcher 1 vs 8, minnbchan=0
 
 ## Paper experiments
 
-Constants at the top of each file. GAE never sees arm labels. Plants go on
-`datain` and \(Y\). Confirmation MCs start at seed 10; the matcher uses 0–9.
+Constants at the top of each file. 
 Results: `limo_sims/results/<script>/`. Run in this order (later scripts
 read earlier JSON).
 
